@@ -3,8 +3,13 @@
 ## Build
 sh ./build.sh
 
+## Get all option
+./sfx_hmacgen
+
 ## Run exemple
-./main -i 00D2XXXX -n 128 -j 1 -k B905ACEC2DA0310FA9BA94BEDDXXXXXX
+This is generating the hmacs for a Sigfox message with no payload
+
+./sfx_hmacgen -i 00D2XXXX -n 128 -j 1 -k B905ACEC2DA0310FA9BA94BEDDXXXXXX
  - i : device ID
  - n : number of hmac to print
  - j : seqnumber increment for each of the entries
@@ -23,5 +28,15 @@ const uint16_t sfx_hmacs[128] = {
 , 0x16D1, 0x1E62, 0xB9D4, 0x17F7, 0x6E35, 0x6F54, 0x7CBC, 0xA5FC, 0x9A02, 0x10F6, 0x50CD, 0xF28B, 0x46E5, 0x9D9A, 0xB5A5, 0x413E
 , 0x90E6, 0xC6E8, 0x96CE, 0xA6A8, 0x1BDB, 0x2D2F, 0x4B4E, 0xF7A5, 0x9921, 0x91D2, 0x139E, 0x40B3, 0xD57A, 0x55E9, 0xE655, 0xDE14
 };
-
  ```
+
+## Alternative
+If you want to generate hmac for a payload type bit you can specify -b option
+
+./sfx_hmacgen -i 00D2XXXX -s 0 -n 128 -j 1 -b 1 -k B905ACEC2DA0310FA9BA94BEDDXXXXXX
+- i : device ID
+- s : start form seqnum 0
+- n : generate 128 hmac
+- j : seqnum increment
+- b : activate bit payload with value 1
+

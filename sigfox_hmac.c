@@ -48,7 +48,7 @@ int ComputeAES(unsigned char *out, unsigned char *buf, unsigned char len, unsign
     return 0;
 }
 
-void CreateHmacList(unsigned long id, unsigned char *key, unsigned char *hmaclist, unsigned int incrval)
+void CreateHmacList(unsigned long id, unsigned char *key, unsigned char *hmaclist, unsigned int incrval, int bit)
 {
 	unsigned int seqnum = 0;
 	unsigned char frame[10] = {0};
@@ -62,7 +62,11 @@ void CreateHmacList(unsigned long id, unsigned char *key, unsigned char *hmaclis
 	frame[5] = (id & 0xFF000000) >> 24;
 	
 	for (seqnum = 0; seqnum < 4096; seqnum += incrval) {
-		frame[0] = (seqnum & 0x0F00) >> 8;
+		if ( bit == -1 ) {
+		   frame[0] = (seqnum & 0x0F00) >> 8;			
+		} else {
+		   frame[0] = 0x80 | ((bit & 1) << 6) | ((seqnum & 0x0F00) >> 8);  // fomat is 0b1VD0 + 4 bits seqNum with V => bit value and D downlink bit
+		}
 		frame[1] = seqnum & 0x00FF;
 		
 		ComputeAES(outAES, frame, 6, &key[0], &nb_block);

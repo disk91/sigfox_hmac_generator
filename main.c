@@ -18,7 +18,7 @@ void show_help(char *name) {
 		"	%s - HEX Patcher for CMT2189C lowCostButton  \n"
 		"SYNOPSIS\n"
 		"	%s [-h] [-v] [-x inhexfile] [-o outhexfile] [-m mapfile]\n"
-		"		[-i id] [-k key] "
+		"		[-i id] [-k key] [-n numOfHmac] [-j increment] [-s seqNumStart] [-b 0/1]"
 		"DESCRIPTION\n"
 		"	This command is used to write a new firmware in backtap\n"
 		"OPTIONS\n"
@@ -28,6 +28,8 @@ void show_help(char *name) {
 		"	-k 	key in HEX(32digits)\n"
 		"   -n  num of HMAC at output (decimal - 16 multiple ) \n"
 		"   -j  seqnumber increment (decimal) \n"
+		"   -s  seqNumber start (decimal) \n"
+		"   -b  enable bit messages with given bit value."
 		"EXAMPLES\n"
 		"		%s -i ABCDABCD -k AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA -r\n"
 		"COPYRIGHT\n"
@@ -49,6 +51,9 @@ int main(int argc, char *argv[])
 	unsigned char hmac[2*4096] = {0};
 	unsigned int num = 512;
 	unsigned int inc = 8;
+	unsigned int seqStart = 0;
+	int bit = -1;				// when -1 - message with no information
+	                            // when 0 or 1 - message with bit information 0 or 1
 	
 	/*
 	for (i = 0; i < 4096; i+=2) {
@@ -63,7 +68,7 @@ int main(int argc, char *argv[])
     	return 0;
     }
 
-	while((opt = getopt(argc, argv, "hx:m:o:i:k:d:n:j:")) != -1)
+	while((opt = getopt(argc, argv, "hx:m:o:i:k:d:n:j:s:b:")) != -1)
 	{
    		switch(opt)
 		{
@@ -78,16 +83,20 @@ int main(int argc, char *argv[])
 						num &= 0x0FF0;  // is a 16 multiplied
 			            break;
 			case 'j':   sscanf(optarg, "%d", &inc);
-			            break;			            
+			            break;			  
+			case 's':   sscanf(optarg, "%d", &seqStart);
+			  			break;          
 			case ':':	printf("-%c MISSING PARAM, execute %s -h \n", optopt, argv[0]); return -1;
 			case '?':	printf("UNKNOWN ARG %c\n", optopt); show_help(argv[0]); return 0;
+			case 'b':   sscanf(optarg, "%d", &bit);
+						break;
 			default:	break;
 			
 			
 		}
 	}
 	
-	CreateHmacList(id, key, hmac, inc);
+	CreateHmacList(id, key, hmac, inc, bit);
 
 	int first=1;
 	printf("const uint8_t sfx_id[4] = { 0x%02X, 0x%02X, 0x%02X, 0x%02X };\n",
@@ -96,8 +105,12 @@ int main(int argc, char *argv[])
 			(id >>  8) & 0xFF, 
 			(id      ) & 0xFF 			
 		);
-	printf("const uint16_t sfx_hmacs[%d] = { \n",num);
-	int offset = 0;
+	if ( bit == -1 || bit == 0 ) {
+   	   printf("const uint16_t sfx_hmacs_0[%d] = { \n",num);
+	} else {
+   	   printf("const uint16_t sfx_hmacs_1[%d] = { \n",num);
+	}
+	int offset = 2*seqStart;
 	for (j = 0; j < (num/16); j++) {
 		for (i = 0; i < 16; i+=1) { 
 			if ( ! first ) {
@@ -112,6 +125,6 @@ int main(int argc, char *argv[])
 		printf("\n");	
 	}
 	printf("};\n");
-
-	
+	printf("const uint16_t sfx_seqStart = %d;\n",seqStart);
+    printf("const uint16_t sfx_seqStop = %d;\n",seqStart+num-1);	
 }
